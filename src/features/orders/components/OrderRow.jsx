@@ -7,6 +7,15 @@ const STATUS_BADGE = {
 
 const MOCK_STATUSES = ['Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
+// Stable reference date — computed once at module load, not on every render.
+// Avoids the react-hooks/purity error from calling Date.now() during render.
+const MODULE_LOAD_TIME = Date.now();
+
+function getMockDate(mockIndex) {
+  return new Date(MODULE_LOAD_TIME - mockIndex * 86_400_000 * 3)
+    .toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 export default function OrderRow({ order, mockIndex }) {
   const isLocal  = !!order.placedAt;
   const status   = isLocal ? order.status : MOCK_STATUSES[mockIndex % 4];
@@ -14,7 +23,7 @@ export default function OrderRow({ order, mockIndex }) {
   const total    = order.total ?? order.discountedTotal ?? 0;
   const date     = isLocal
     ? new Date(order.placedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-    : new Date(Date.now() - mockIndex * 86_400_000 * 3).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    : getMockDate(mockIndex);
 
   return (
     <div className="card" style={{ padding: 20 }}>

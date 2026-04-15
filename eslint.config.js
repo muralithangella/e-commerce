@@ -7,6 +7,13 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores(['dist']),
   {
+    // Config/tooling files run in Node — give them Node globals
+    files: ['*.config.js', '*.config.mjs'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
+  {
     files: ['**/*.{js,jsx}'],
     extends: [
       js.configs.recommended,

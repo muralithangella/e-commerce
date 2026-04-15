@@ -1,18 +1,21 @@
 import { defineConfig } from 'vitest/config';
-import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { resolve, dirname } from 'path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   resolve: {
     alias: {
-      '@':           resolve(process.cwd(), 'src'),
-      '@features':   resolve(process.cwd(), 'src/features'),
-      '@shared':     resolve(process.cwd(), 'src/shared'),
-      '@api':        resolve(process.cwd(), 'src/api'),
-      '@layouts':    resolve(process.cwd(), 'src/layouts'),
-      '@routes':     resolve(process.cwd(), 'src/routes'),
-      '@lib':        resolve(process.cwd(), 'src/lib'),
-      '@utils':      resolve(process.cwd(), 'src/utils'),
-      '@components': resolve(process.cwd(), 'src/components'),
+      '@':           resolve(__dirname, 'src'),
+      '@features':   resolve(__dirname, 'src/features'),
+      '@shared':     resolve(__dirname, 'src/shared'),
+      '@api':        resolve(__dirname, 'src/api'),
+      '@layouts':    resolve(__dirname, 'src/layouts'),
+      '@routes':     resolve(__dirname, 'src/routes'),
+      '@lib':        resolve(__dirname, 'src/lib'),
+      '@utils':      resolve(__dirname, 'src/utils'),
+      '@components': resolve(__dirname, 'src/components'),
     },
   },
   test: {
