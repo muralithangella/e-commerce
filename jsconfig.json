@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*":           ["src/*"],
+      "@features/*":   ["src/features/*"],
+      "@shared/*":     ["src/shared/*"],
+      "@api/*":        ["src/api/*"],
+      "@layouts/*":    ["src/layouts/*"],
+      "@routes/*":     ["src/routes/*"],
+      "@lib/*":        ["src/lib/*"],
+      "@utils/*":      ["src/utils/*"],
+      "@components/*": ["src/components/*"]
+    },
+    "jsx": "react-jsx"
+  },
+  "include": ["src"]
+}
