@@ -6,23 +6,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // 'prompt' — new SW waits, PwaUpdateBanner calls updateServiceWorker() to activate.
-      // Never use 'autoUpdate' in e-commerce — it can reload mid-checkout.
       registerType: 'prompt',
-
-      // Take control of all open tabs immediately after the user accepts the update.
       injectRegister: 'auto',
-
       includeAssets: ['favicon.svg'],
-
-      // ── Dev mode SW ───────────────────────────────────────────────────────
-      // Enables the service worker during `npm run dev` so you can test
-      // offline behaviour without running a full production build.
-      // type: 'module' is required for Vite's ESM dev server.
-      devOptions: {
-        enabled: true,
-        type: 'module',
-      },
 
       manifest: {
         name:             'ShopDash',
