@@ -15,6 +15,15 @@ export default defineConfig({
 
       includeAssets: ['favicon.svg'],
 
+      // ── Dev mode SW ───────────────────────────────────────────────────────
+      // Enables the service worker during `npm run dev` so you can test
+      // offline behaviour without running a full production build.
+      // type: 'module' is required for Vite's ESM dev server.
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
+
       manifest: {
         name:             'ShopDash',
         short_name:       'ShopDash',
