@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCheckout } from '../api/mutations';
 import { NavigationGuard } from '@shared/components/NavigationGuard';
+import { logger } from '@utils/logger';
 
 const FIELDS = [
   { name: 'fullName',  label: 'Full Name',       placeholder: 'Jane Smith',          col: 2 },
@@ -34,7 +35,12 @@ export default function CheckoutModal({ items, total, onClose }) {
   const navigate  = useNavigate();
   const isDirty   = Object.values(form).some(Boolean);
 
+  // Log checkout_started once on mount — capture values at open time via ref
+  // so the effect doesn't re-fire if items/total change while modal is open.
+  const mountRef = useRef({ itemCount: items.length, totalValue: total });
   useEffect(() => {
+    const { itemCount, totalValue } = mountRef.current;
+    logger.info('checkout_started', { itemCount, totalValue });
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, []);

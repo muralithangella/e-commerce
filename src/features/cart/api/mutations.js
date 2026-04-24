@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { saveCart } from './queries';
 import { saveOrder } from '@/features/orders/api/queries';
+import { logger } from '@/utils/logger';
 
 function useCartMutation(updater) {
   const qc = useQueryClient();
@@ -60,9 +61,20 @@ export function useCheckout() {
       saveCart([]);
       return order;
     },
-    onSuccess: () => {
+    onSuccess: (order) => {
+      logger.info('checkout_success', {
+        orderId:    order.id,
+        itemCount:  order.products.length,
+        totalValue: order.total,
+      });
       qc.setQueryData(['cart'], []);
       qc.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: (error) => {
+      logger.error('checkout_failure', {
+        message: error?.message ?? 'Unknown error',
+        status:  error?.status,
+      });
     },
   });
 }

@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { logger } from '@/utils/logger';
 
 const CATEGORIES = ['', 'smartphones', 'laptops', 'fragrances', 'skincare', 'groceries', 'home-decoration', 'furniture', 'tops', 'womens-dresses', 'womens-shoes', 'mens-shirts', 'mens-shoes', 'mens-watches', 'womens-watches', 'womens-bags', 'womens-jewellery', 'sunglasses', 'automotive', 'motorcycle', 'lighting'];
 
@@ -25,7 +26,13 @@ export default function ProductFilters() {
 
     if (!debounce) { apply(); return; }
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(apply, 350);
+    debounceRef.current = setTimeout(() => {
+      apply();
+      // Log search_used only when a search term is actually committed to the URL
+      if (key === 'q' && value.trim()) {
+        logger.info('search_used', { query: value.trim() });
+      }
+    }, 350);
   };
 
   return (
@@ -51,7 +58,10 @@ export default function ProductFilters() {
         className="input"
         style={{ flex: '0 1 200px' }}
         value={cat}
-        onChange={(e) => set('category', e.target.value)}
+        onChange={(e) => {
+          set('category', e.target.value);
+          if (e.target.value) logger.info('category_filter_used', { category: e.target.value });
+        }}
       >
         {CATEGORIES.map((c) => (
           <option key={c} value={c}>{c ? c.replace(/-/g, ' ') : 'All categories'}</option>
