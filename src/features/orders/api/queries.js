@@ -4,14 +4,20 @@ import { apiClient } from '@/api/client';
 export const PAGE_SIZE  = 5;
 const ORDERS_KEY = 'local_orders';
 
+// ── PII notice ─────────────────────────────────────────────────────────────────
+// local_orders contains shipping data (name, email, address) — PII.
+// Stored in sessionStorage, not localStorage:
+//   - Cleared automatically when the tab closes (limits PII exposure window)
+//   - Not accessible across tabs (reduces attack surface)
+//   - Still survives page refresh within the same session
 export function loadLocalOrders() {
-  try { return JSON.parse(localStorage.getItem(ORDERS_KEY) ?? '[]'); }
+  try { return JSON.parse(sessionStorage.getItem(ORDERS_KEY) ?? '[]'); }
   catch { return []; }
 }
 
 export function saveOrder(order) {
   const existing = loadLocalOrders();
-  localStorage.setItem(ORDERS_KEY, JSON.stringify([order, ...existing]));
+  sessionStorage.setItem(ORDERS_KEY, JSON.stringify([order, ...existing]));
 }
 
 // ── Local orders (placed via checkout) — no caching ───────────────────────────

@@ -1,40 +1,36 @@
 import axios from 'axios';
 import { logger } from '@/utils/logger';
 import { newCorrelationId } from '@/utils/session';
+import { auth } from '@/utils/auth';
 
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10_000,
+  // withCredentials: true,  // ← uncomment when backend uses HttpOnly cookies
 });
 
 // WeakMap stores { startTime, correlationId } keyed on the request config object.
-// Avoids mutating Axios internals and is GC-friendly.
 const requestMeta = new WeakMap();
 
 // ── Request interceptor ────────────────────────────────────────────────────────
 apiClient.interceptors.request.use(
   (config) => {
-    // 1. Auth token
-    try {
-      const token = localStorage.getItem('auth_token');
-      if (token) config.headers.Authorization = `Bearer ${token}`;
-    } catch {
-      logger.warn('api_request_setup', { message: 'Could not read auth_token from localStorage' });
-    }
+    // 1. Attach auth token from in-memory store — never from localStorage.
+    //    In-memory tokens are invisible to XSS; localStorage tokens are not.
+    const token = auth.getToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
 
-    // 2. Correlation ID — one UUID per request.
-    //    Sent as a request header so the backend can log the same ID,
-    //    enabling end-to-end tracing across frontend and backend logs.
+    // 2. Correlation ID — one UUID per request for end-to-end tracing.
     const correlationId = newCorrelationId();
     config.headers['X-Correlation-ID'] = correlationId;
 
-    // 3. Record start time alongside correlationId
+    // 3. Record timing metadata
     requestMeta.set(config, { startTime: Date.now(), correlationId });
 
     logger.debug('api_request', {
-      method:        config.method?.toUpperCase(),
-      url:           config.url,
-      correlationId, // ties this log to its response/error log
+      method: config.method?.toUpperCase(),
+      url:    config.url,
+      correlationId,
     });
 
     return config;
@@ -53,18 +49,28 @@ apiClient.interceptors.response.use(
       url:           response.config.url,
       status:        response.status,
       duration:      ms,
-      correlationId: meta?.correlationId, // same ID as the request log
+      correlationId: meta?.correlationId,
     });
 
     return response;
   },
   (error) => {
-    const meta      = error.config ? requestMeta.get(error.config) : null;
+    const meta       = error.config ? requestMeta.get(error.config) : null;
     const normalised = normaliseError(error);
+
+    // 401 — token expired or invalid. Clear it so the next request doesn't
+    // keep sending a bad token. In production this would trigger a refresh flow.
+    if (normalised.status === 401) {
+      auth.clearToken();
+      logger.warn('auth_token_expired', {
+        url:           normalised.url,
+        correlationId: meta?.correlationId,
+      });
+    }
 
     logger.error('api_error', {
       ...normalised,
-      correlationId: meta?.correlationId, // ties error back to the original request
+      correlationId: meta?.correlationId,
     });
 
     return Promise.reject(normalised);
@@ -105,7 +111,6 @@ export function normaliseError(error) {
   };
 }
 
-// ── HTTP status → human message ────────────────────────────────────────────────
 function httpMessage(status) {
   const map = {
     400: 'Bad request. Please check your input.',

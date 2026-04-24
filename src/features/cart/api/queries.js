@@ -1,5 +1,10 @@
 import { queryOptions } from '@tanstack/react-query';
 
+// ── Storage security note ───────────────────────────────────────────────────────────────
+// Cart data (product IDs, quantities, prices) is NOT sensitive — it contains
+// no PII, no auth tokens, and no payment data. localStorage is acceptable here.
+// Contrast with local_orders (PII) which uses sessionStorage, and auth tokens
+// which use in-memory storage only (see src/utils/auth.js).
 const CART_KEY = 'cart';
 
 function loadCart() {
