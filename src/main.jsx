@@ -4,6 +4,15 @@ import './index.css';
 import App from './App.jsx';
 import AppErrorBoundary from '@/shared/components/ErrorBoundary';
 import { logger } from '@/utils/logger';
+import { sessionId } from '@/utils/session';
+
+// ── Session start log ──────────────────────────────────────────────────────────
+// First log event of every session — confirms the session ID and app version.
+logger.info('session_start', {
+  sessionId,
+  userAgent: navigator.userAgent,
+  url:       window.location.href,
+});
 
 // ── Global error handlers ──────────────────────────────────────────────────────
 // These catch errors that happen OUTSIDE the React tree:
@@ -16,18 +25,19 @@ window.onerror = (message, source, lineno, colno, error) => {
     source,
     lineno,
     colno,
+    sessionId, // explicit here — logger also injects it, but being explicit aids debugging
     error: error ?? undefined,
   });
-  // Return false — let the browser's default error handling also run
   return false;
 };
 
 window.onunhandledrejection = (event) => {
   const reason = event.reason;
   logger.error('unhandled_rejection', {
-    message: reason?.message ?? String(reason),
-    stack:   reason?.stack,
-    error:   reason instanceof Error ? reason : undefined,
+    message:   reason?.message ?? String(reason),
+    stack:     reason?.stack,
+    sessionId,
+    error:     reason instanceof Error ? reason : undefined,
   });
 };
 

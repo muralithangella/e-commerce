@@ -3,31 +3,44 @@
  * Install: npm install @sentry/react
  * Init:    Sentry.init({ dsn: import.meta.env.VITE_SENTRY_DSN }) in main.jsx
  *
- * No call site changes needed — logger.info(), logger.error() etc. stay identical.
+ * sessionId and correlationId are automatically set on the Sentry scope
+ * so every captured error and breadcrumb carries full tracing context.
  */
 export const SentryProvider = {
   log(event) {
-    // Lazy import so Sentry is never bundled unless this provider is active
-    import('@sentry/react').then(({ captureException, captureMessage, addBreadcrumb }) => {
-      const { level, event: eventName, error, ...context } = event;
+    import('@sentry/react').then(({ captureException, captureMessage, addBreadcrumb, withScope }) => {
+      const { level, event: eventName, error, sessionId, correlationId, ...context } = event;
 
-      // Errors → Sentry.captureException with full context
+      // Errors → captureException with session + correlation context on scope
       if (level === 'error' && error instanceof Error) {
-        captureException(error, { extra: context });
+        withScope((scope) => {
+          scope.setTag('session_id',     sessionId);
+          scope.setTag('correlation_id', correlationId ?? 'n/a');
+          scope.setExtras(context);
+          captureException(error);
+        });
         return;
       }
 
-      // Warnings and info → breadcrumbs (visible in Sentry error context)
+      // All other events → breadcrumbs (visible in Sentry error timeline)
       addBreadcrumb({
-        category: eventName ?? 'log',
-        message:  context.message ?? eventName,
+        category:  eventName ?? 'log',
+        message:   context.message ?? eventName,
         level,
-        data: context,
+        data: {
+          ...context,
+          sessionId,
+          correlationId,
+        },
       });
 
       // Explicit error messages without an Error object → captureMessage
       if (level === 'error') {
-        captureMessage(context.message ?? eventName, 'error');
+        withScope((scope) => {
+          scope.setTag('session_id',     sessionId);
+          scope.setTag('correlation_id', correlationId ?? 'n/a');
+          captureMessage(context.message ?? eventName, 'error');
+        });
       }
     });
   },
